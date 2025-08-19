@@ -171,12 +171,12 @@ body {
   box-sizing: border-box;
 }
 
-.kprojs_example_left-container {
+.shelljs_example_left-container {
   width: 51.5%;
   float: left;
 }
 
-.kprojs_example_right-container {
+.shelljs_example_right-container {
   float: right;
   width: 48.5%;
   background: rgb(15, 17, 22);
@@ -195,7 +195,7 @@ body {
   right: 0;
 }
 
-.kprojs_example_btns-container {
+.shelljs_example_btns-container {
   padding: 2em 2em 2.5em 2em;
   box-sizing: border-box;
   margin: 0 auto 1em auto;
@@ -204,7 +204,7 @@ body {
   background: rgb(55, 50, 65);
 }
 
-.kprojs_example__button {
+.shelljs_example__button {
   background: white;
   border: 2px solid white;
   color: rgb(22, 22, 35);
@@ -218,41 +218,41 @@ body {
   border-radius: 2px;
 }
 
-.kprojs_example__button:hover {
+.shelljs_example__button:hover {
   background: none;
   color: white;
 }
 
-.kprojs_example__button:disabled, .kprojs_example__button:hover:disabled {
+.shelljs_example__button:disabled, .shelljs_example__button:hover:disabled {
   background: rgb(200, 200, 200);
   border: 2px solid rgb(200, 200, 200);
   cursor: auto;
   color: rgb(22, 22, 35);
 }
 
-.kprojs_example__header {
+.shelljs_example__header {
   font-size: 1.5em;
   font-weight: bold;
   padding: .6em 0 .5em 0;
 }
 
-.kprojs_example_btns-sign {
+.shelljs_example_btns-sign {
   box-sizing: border-box;
   margin: 0 auto .6em auto;
   width: 95%;
 }
 
-.kprojs_example__input-field-container {
+.shelljs_example__input-field-container {
   margin-bottom: 1.5em;
 }
 
-.kprojs_example__input-label {
+.shelljs_example__input-label {
   text-transform: uppercase;
   margin: .5em 0;
   display: block;
 }
 
-.kprojs_example__input-field {
+.shelljs_example__input-field {
   width: 100%;
   display: block;
   background: none;
@@ -267,7 +267,7 @@ body {
   font-size: 1.35em;
 }
 
-.kprojs_example__textarea {
+.shelljs_example__textarea {
   width: 100%;
   min-width: 100%;
   max-width: 100%;
@@ -285,11 +285,11 @@ body {
   line-height: 1.5em;
 }
 
-.kprojs_example__button-sign-container {
+.shelljs_example__button-sign-container {
   text-align: center;
 }
 
-.kprojs_example__load-firmware-container, .kprojs_example__load-erc20-container {
+.shelljs_example__load-firmware-container, .shelljs_example__load-erc20-container {
   width: 95%;
   margin: 1.5em auto;
   padding: 1.5em 0;

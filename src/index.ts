@@ -1,10 +1,12 @@
-import KProJS from "kprojs";
-import TransportWebHID from "kprojs-web-hid";
+import ShellJS from "shelljs";
+import TransportWebHID from "shelljs-web-hid";
 import * as secp from '@noble/secp256k1';
 import { keccak256 } from 'js-sha3';
 import { recoverPersonalSignature, recoverTypedSignature } from '@metamask/eth-sig-util';
-import Transport, { StatusCodes } from "kprojs/lib/transport";
-import Eth from "kprojs/lib/eth";
+import { publicToAddress, toBuffer, bufferToHex} from "@ethereumjs/util";
+import Transport, { StatusCodes } from "shelljs/lib/transport";
+import Commands from "shelljs/lib/commands";
+import { Buffer } from "buffer";
 
 
 const connectBtn = document.getElementById("btn-connect") as HTMLButtonElement;
@@ -77,12 +79,12 @@ function verifySign(s: {v: string, r: string, s: string}, message: string, pubKe
   return {signature: signature.toCompactHex(), signed: secp.verify(signature, messageHash, pubKey.toLowerCase())};
 }
 
-function verifyMessSign(s: {v: number, r: string, s: string}, address: string, m: any, f: (options: {}) => {}) : {signature: string, signed: boolean} {
+function verifyMessSign(s: {v: number, r: string, s: string}, address: Buffer, m: any, f: (options: {}) => {}) : {signature: string, signed: boolean} {
   let sigV = getV(s.v);
   let signature = "0x" + s.r + s.s + (sigV ? "01" : "00");
   let recAddress = f({data: m, signature: signature, version: "V4"});
 
-  return {signature: signature, signed: recAddress == address.toLowerCase()};
+  return {signature: signature, signed: recAddress == bufferToHex(address)};
 }
 
 async function readFile(file: Blob) : Promise<ArrayBuffer> {
@@ -97,12 +99,12 @@ async function readFile(file: Blob) : Promise<ArrayBuffer> {
 
 function main() : void {
   let transport: Transport;
-  let appEth: Eth;
+  let cmdSet: Commands;
 
   connectBtn.addEventListener("click", async () => {
     try {
       transport = await TransportWebHID.create();
-      appEth = new KProJS.Eth(transport);
+      cmdSet = new ShellJS.Commands(transport);
       disconnectBtn.disabled = false;
       getAddressBtn.disabled = false;
       getConfBtn.disabled = false;
@@ -123,27 +125,27 @@ function main() : void {
 
   getAddressBtn.addEventListener("click", async () => {
 
-    if(appEth) {
-      const { publicKey, address, chainCode } = await appEth.getAddress(path.value, true, true);
-      let message = formattedDate() + "&nbsp;" + "Ethereum address: " + address;
+    if(cmdSet) {
+      const { fingerprint, publicKey, chainCode } = await cmdSet.getPublicKey(path.value, true);
+      let message = formattedDate() + "&nbsp;" + "Public key: 0x" + publicKey + ", Fingerprint: " + fingerprint;
       addMessage(message, logsContainer);
     }
   });
 
   getConfBtn.addEventListener("click", async () => {
-    if(appEth) {
+    if(cmdSet) {
       date = Date.now();
-      const { fwVersion, erc20Version, serialNumber, publicKey } = await appEth.getAppConfiguration();
-      let message = formattedDate() + "&nbsp;" + "Firmware version - " + fwVersion + ", ERC20/Chain DB version - " + erc20Version + ", Serial number - 0x" + serialNumber + ", Public key - 0x" + publicKey;
+      const { fwVersion, dbVersion, serialNumber, publicKey } = await cmdSet.getAppConfiguration();
+      let message = formattedDate() + "&nbsp;" + "Firmware version - " + fwVersion + ", DB version - " + dbVersion + ", Serial number - 0x" + serialNumber + ", Public key - 0x" + publicKey;
       addMessage(message, logsContainer);
     }
   });
 
   txSignBtn.addEventListener("click", async () => {
-    if(appEth) {
-      data= signData.value;
-      let { publicKey } = await appEth.getAddress(path.value);
-      let res = await appEth.signTransaction(path.value, data);
+    if(cmdSet) {
+      data = signData.value;
+      let { publicKey } = await cmdSet.getPublicKey(path.value);
+      let res = await cmdSet.signEthTransaction(path.value, data);
       let {signature, signed} = verifySign(res, data, publicKey);
       let succMessage = formattedDate() + "&nbsp;" + "Transaction successfully signed. Signature - 0x" + signature;
       let errMessage = formattedDate() + "&nbsp;" + "Error. Invalid signature";
@@ -152,13 +154,13 @@ function main() : void {
   });
 
   pMessSignBtn.addEventListener("click", async () => {
-    if(appEth) {
+    if(cmdSet) {
       date = Date.now();
       data = signData.value;
 
-      let { address } = await appEth.getAddress(path.value);
-      let res = await appEth.signPersonalMessage(path.value, data);
-      let r = verifyMessSign(res, address, new TextEncoder().encode(data), recoverPersonalSignature);
+      let { publicKey } = await cmdSet.getPublicKey(path.value);
+      let res = await cmdSet.signEthPersonalMessage(path.value, data);
+      let r = verifyMessSign(res, publicToAddress(toBuffer("0x" + publicKey.substring(2))), new TextEncoder().encode(data), recoverPersonalSignature);
       let succMessage = formattedDate() + "&nbsp;" + "Personal message successfully signed. Signature - " + r.signature;
       let errMessage = formattedDate() + "&nbsp;" + "Error. Invalid signature";
       addLogsMessage(r.signed, succMessage, errMessage);
@@ -166,11 +168,11 @@ function main() : void {
   });
 
   eip712SignBtn.addEventListener("click", async() => {
-    if(appEth) {
+    if(cmdSet) {
       let eip712MessJSON = JSON.parse(signData.value);
-      let res = await appEth.signEIP712Message(path.value, eip712MessJSON);
-      let { address } = await appEth.getAddress(path.value);
-      let r = verifyMessSign(res, address, eip712MessJSON, recoverTypedSignature);
+      let { publicKey } = await cmdSet.getPublicKey(path.value);
+      let res = await cmdSet.signEIP712Message(path.value, eip712MessJSON);
+      let r = verifyMessSign(res, publicToAddress(toBuffer("0x" + publicKey.substring(2))), eip712MessJSON, recoverTypedSignature);
       let succMessage = formattedDate() + "&nbsp;" + "EIP712 Message successfully signed. Signature - " + r.signature;
       let errMessage = formattedDate() + "&nbsp;" + "Error. Invalid signature";
       addLogsMessage(r.signed, succMessage, errMessage);
@@ -181,13 +183,13 @@ function main() : void {
     const f = fw.files[0];
     let message: string;
 
-    if(f && appEth) {
+    if(f && cmdSet) {
       let firmware = await readFile(f);
 
       try {
         message = formattedDate() + "&nbsp;" + "Updating firmware...";
         addMessage(message, logsContainer);
-        await appEth.loadFirmware(firmware);
+        await cmdSet.loadFirmware(firmware);
         message = formattedDate() + "&nbsp;" + "Firmware updated successfuly"
         addMessage(message, logsContainer);
       } catch(e) {
@@ -205,13 +207,13 @@ function main() : void {
     const dbF = db.files[0];
     let message: string;
 
-    if(dbF && appEth) {
+    if(dbF && cmdSet) {
       let database = await readFile(dbF);
 
       try {
         message = formattedDate() + "&nbsp;" + "Updating ERC20 database...";
         addMessage(message, logsContainer);
-        await appEth.loadERC20DB(database);
+        await cmdSet.loadDatabase(database);
         message = formattedDate() + "&nbsp;" + "ERC20 DB updated successfuly"
         addMessage(message, logsContainer);
       } catch(e) {

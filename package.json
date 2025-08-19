@@ -1,25 +1,26 @@
 {
-  "name": "kprojs-example",
+  "name": "shelljs-example",
   "version": "1.0.0",
-  "description": "Test page for KProJS and KProJS WebHID",
+  "description": "Test page for ShellJS and ShellJS WebHID",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "parcel build src/index.html",
     "start": "parcel src/index.html",
-    "predeploy": "rm -rf dist && parcel build src/index.html --no-source-maps --public-url  https://choppu.github.io/kprojs-example/",
+    "predeploy": "rm -rf dist && parcel build src/index.html --no-source-maps --public-url  https://choppu.github.io/shelljs-example/",
     "deploy": "gh-pages -d dist"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@metamask/eth-sig-util": "^7.0.0",
+    "@ethereumjs/util": "^8.1.0",
     "@noble/secp256k1": "^2.0.0",
     "core-js": "^3.32.1",
     "gh-pages": "^6.0.0",
     "import": "^0.0.6",
     "js-sha3": "^0.9.1",
-    "kprojs": "github:choppu/kprojs",
-    "kprojs-web-hid": "github:choppu/kprojs-web-hid"
+    "shelljs": "github:choppu/shelljs",
+    "shelljs-web-hid": "github:choppu/shelljs-web-hid"
   },
   "devDependencies": {
     "assert": "^2.1.0",
