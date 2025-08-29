@@ -196,7 +196,7 @@ body {
 }
 
 .shelljs_example_btns-container {
-  padding: 2em 2em 2.5em 2em;
+  padding: 2em 0 2.5em 0;
   box-sizing: border-box;
   margin: 0 auto 1em auto;
   text-align: center;
@@ -214,7 +214,7 @@ body {
   text-transform: uppercase;
   cursor: pointer;
   font-weight: 600;
-  margin: 0 .5em;
+  margin: .4em 0;
   border-radius: 2px;
 }
 

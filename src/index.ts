@@ -1,11 +1,11 @@
-import ShellJS from "shelljs";
-import TransportWebHID from "shelljs-web-hid";
+import ShellJS from "@choppu/shelljs";
+import TransportWebHID from "@choppu/shelljs-web-hid";
 import * as secp from '@noble/secp256k1';
 import { keccak256 } from 'js-sha3';
 import { recoverPersonalSignature, recoverTypedSignature } from '@metamask/eth-sig-util';
 import { publicToAddress, toBuffer, bufferToHex} from "@ethereumjs/util";
-import Transport, { StatusCodes } from "shelljs/lib/transport";
-import Commands from "shelljs/lib/commands";
+import Transport, { StatusCodes } from "@choppu/shelljs/lib/transport";
+import Commands from "@choppu/shelljs/lib/commands";
 import { Buffer } from "buffer";
 
 
@@ -15,6 +15,7 @@ const getAddressBtn = document.getElementById("btn-get-address") as HTMLButtonEl
 const getConfBtn = document.getElementById("btn-get-conf") as HTMLButtonElement;
 const logsContainer = document.getElementById("logs-container");
 const txSignBtn = document.getElementById("btn-sign-tx") as HTMLButtonElement;
+const signPSBTBtn = document.getElementById("btn-sign-psbt") as HTMLButtonElement;
 const signData = document.getElementById("sign-data") as HTMLTextAreaElement;
 const eip712SignBtn = document.getElementById("btn-sign-eip712") as HTMLButtonElement;
 const pMessSignBtn = document.getElementById("btn-sign-message") as HTMLButtonElement;
@@ -108,6 +109,7 @@ function main() : void {
       disconnectBtn.disabled = false;
       getAddressBtn.disabled = false;
       getConfBtn.disabled = false;
+      signPSBTBtn.disabled = false;
       txSignBtn.disabled = false;
       eip712SignBtn.disabled = false;
       pMessSignBtn.disabled = false;
@@ -116,7 +118,7 @@ function main() : void {
       connectBtn.disabled = true;
 
 
-      let message = formattedDate() + "&nbsp;" + "KPro Wallet connected";
+      let message = formattedDate() + "&nbsp;" + "Shell connected";
       addMessage(message, logsContainer);
     } catch (e) {
       console.log(e);
@@ -127,7 +129,7 @@ function main() : void {
 
     if(cmdSet) {
       const { fingerprint, publicKey, chainCode } = await cmdSet.getPublicKey(path.value, true);
-      let message = formattedDate() + "&nbsp;" + "Public key: 0x" + publicKey + ", Fingerprint: " + fingerprint;
+      let message = `${formattedDate()} &nbsp; Public key - <span style="color: green;">0x${publicKey}</span>, Fingerprint - <span style="color: green;">${fingerprint}</span>`;
       addMessage(message, logsContainer);
     }
   });
@@ -136,8 +138,22 @@ function main() : void {
     if(cmdSet) {
       date = Date.now();
       const { fwVersion, dbVersion, serialNumber, publicKey } = await cmdSet.getAppConfiguration();
-      let message = formattedDate() + "&nbsp;" + "Firmware version - " + fwVersion + ", DB version - " + dbVersion + ", Serial number - 0x" + serialNumber + ", Public key - 0x" + publicKey;
+      let message = `${formattedDate()} &nbsp; Firmware version - <span style="color: green;">${fwVersion}</span>, DB version - <span style="color: green;">${dbVersion}</span>, Serial number - <span style="color: green;">0x${serialNumber}</span>, Public key - <span style="color: green;">0x${publicKey}</span>`;
       addMessage(message, logsContainer);
+    }
+  });
+
+  signPSBTBtn.addEventListener("click", async() => {
+    if(cmdSet) {
+        try {
+            let data = fromHex(signData.value);
+            let res = await cmdSet.signPSBT(data);
+            let succMessage = `${formattedDate()} &nbsp; Transaction successfully signed. PSBT - <span style="color: green;">${Buffer.from(res).toString("hex")}</span>`;
+            addMessage(succMessage, logsContainer);
+        } catch(err) {
+            let errMessage = formattedDate() + "&nbsp;" + "Error signing transaction";
+            addMessage(errMessage, logsContainer);
+        }
     }
   });
 
@@ -147,7 +163,7 @@ function main() : void {
       let { publicKey } = await cmdSet.getPublicKey(path.value);
       let res = await cmdSet.signEthTransaction(path.value, data);
       let {signature, signed} = verifySign(res, data, publicKey);
-      let succMessage = formattedDate() + "&nbsp;" + "Transaction successfully signed. Signature - 0x" + signature;
+      let succMessage = `${formattedDate()} &nbsp; Transaction successfully signed. Signature - <span style="color: green;">0x${signature}</span>`;
       let errMessage = formattedDate() + "&nbsp;" + "Error. Invalid signature";
       addLogsMessage(signed, succMessage, errMessage);
     }
@@ -161,7 +177,7 @@ function main() : void {
       let { publicKey } = await cmdSet.getPublicKey(path.value);
       let res = await cmdSet.signEthPersonalMessage(path.value, data);
       let r = verifyMessSign(res, publicToAddress(toBuffer("0x" + publicKey.substring(2))), new TextEncoder().encode(data), recoverPersonalSignature);
-      let succMessage = formattedDate() + "&nbsp;" + "Personal message successfully signed. Signature - " + r.signature;
+      let succMessage = `${formattedDate()} &nbsp; Personal message successfully signed. Signature - <span style="color: green;">${r.signature}</span>`;
       let errMessage = formattedDate() + "&nbsp;" + "Error. Invalid signature";
       addLogsMessage(r.signed, succMessage, errMessage);
     }
@@ -173,7 +189,7 @@ function main() : void {
       let { publicKey } = await cmdSet.getPublicKey(path.value);
       let res = await cmdSet.signEIP712Message(path.value, eip712MessJSON);
       let r = verifyMessSign(res, publicToAddress(toBuffer("0x" + publicKey.substring(2))), eip712MessJSON, recoverTypedSignature);
-      let succMessage = formattedDate() + "&nbsp;" + "EIP712 Message successfully signed. Signature - " + r.signature;
+      let succMessage = `${formattedDate()} &nbsp; EIP712 Message successfully signed. Signature - <span style="color: green;">${r.signature}</span>`;
       let errMessage = formattedDate() + "&nbsp;" + "Error. Invalid signature";
       addLogsMessage(r.signed, succMessage, errMessage);
     }
@@ -198,7 +214,7 @@ function main() : void {
         addMessage(message, logsContainer);
       }
     } else {
-      message = f ? (formattedDate() + "&nbsp;" + "Error. Keycard Pro is disconnected") : (formattedDate() + "&nbsp;" + "No firmware file found");
+      message = f ? (formattedDate() + "&nbsp;" + "Error. Shell is disconnected") : (formattedDate() + "&nbsp;" + "No firmware file found");
       addMessage(message, logsContainer);
     }
   });
@@ -211,10 +227,10 @@ function main() : void {
       let database = await readFile(dbF);
 
       try {
-        message = formattedDate() + "&nbsp;" + "Updating ERC20 database...";
+        message = formattedDate() + "&nbsp;" + "Updating database...";
         addMessage(message, logsContainer);
         await cmdSet.loadDatabase(database);
-        message = formattedDate() + "&nbsp;" + "ERC20 DB updated successfuly"
+        message = formattedDate() + "&nbsp;" + "Database updated successfuly"
         addMessage(message, logsContainer);
       } catch(e) {
         let err = e.statusCode == StatusCodes.SECURITY_STATUS_NOT_SATISFIED ? "Firmware update canceled by user" : e;
@@ -222,7 +238,7 @@ function main() : void {
         addMessage(message, logsContainer);
       }
     } else {
-      message = dbF ? (formattedDate() + "&nbsp;" + "Error. Keycard Pro is disconnected") : (formattedDate() + "&nbsp;" + "No ERC20 DB file found");
+      message = dbF ? (formattedDate() + "&nbsp;" + "Error. Shell is disconnected") : (formattedDate() + "&nbsp;" + "No database file found");
       addMessage(message, logsContainer);
     }
   });
@@ -240,7 +256,7 @@ function main() : void {
       loadERC20Btn.disabled = true;
       connectBtn.disabled = false;
 
-      let message = formattedDate() + "&nbsp;" + "KPro Wallet disconnected"
+      let message = formattedDate() + "&nbsp;" + "Shell disconnected"
       addMessage(message, logsContainer);
     }
   });
